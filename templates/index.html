@@ -2,16 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Logseq ❤️ Spotify</title>
     <link rel="stylesheet" href="/static/css/output.css">
+    <script src="https://kit.fontawesome.com/9d91eaa1d1.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <div class="container p-5">
 
-        <p>
-            <a href="{{auth_uri}}">Login to spotify</a>
-        </p>
+    <!-- This example requires Tailwind CSS v2.0+ -->
+    <div class="bg-indigo-200 bg-opacity-25">
+      <div class="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
+        <div class="lg:grid lg:grid-cols-2 lg:gap-8">
+          <h2 class="max-w-md mx-auto text-3xl tracking-tight font-bold text-indigo-900 text-center lg:max-w-xl lg:text-left">We can work it out</h2>
+          <div class="flow-root self-center mt-8 lg:mt-0">
+            <div class="-mt-4 -ml-8 flex flex-wrap justify-between lg:-ml-4">
+              <div class="mt-4 ml-8 flex flex-grow flex-shrink-0 justify-center lg:flex-grow-0 lg:ml-4">
+                <img class="h-12" src="/static/images/LS3.png" alt="Tuple">
+              </div>
+              <div class="mt-4 ml-8 flex flex-grow flex-shrink-0 justify-center lg:flex-grow-0 lg:ml-4 text-4xl">
+                ❤️
+              </div>
+              <div class="mt-4 ml-8 flex flex-grow flex-shrink-0 justify-center lg:flex-grow-0 lg:ml-4">
+                <img class="h-12" src="/static/images/spotify.png" alt="Spotify">
+              </div>
 
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- This example requires Tailwind CSS v2.0+ -->
+    <div class="bg-indigo-700">
+      <div class="max-w-2xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8">
+        <h2 class="text-3xl tracking-tight font-bold text-white sm:text-4xl sm:tracking-tight">
+          <span class="block">Log your recently listened</span>
+          <span class="block">Spotify songs in Logseq</span>
+
+        </h2>
+        <a href="{{auth_uri}}" class="mt-8 w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 sm:w-auto">
+            <i class="fa-brands fa-spotify mr-4 fa-xl"></i>
+            Authenticate with Spotify
+        </a>
+      </div>
+    </div>
+
+
 </body>
 </html>

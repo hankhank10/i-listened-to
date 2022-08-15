@@ -153,8 +153,35 @@ def auth_callback():
 
     db.session.commit()
 
-    return jsonify(user)
+    return render_template('success.html', id=user.id)
 
+
+@app.route('/getsongs/')
+def get_songs():
+    user_id = request.args.get('user_id')
+
+    if not user_id:
+        return {
+            'status': 'error',
+            'message': 'No user_id provided'
+        }, 400
+
+    user = User.query.filter_by(
+        id = user_id
+    ).first()
+
+    if not user:
+        return {
+            'status': 'error',
+            'message': 'No user found with that id'
+        }, 404
+
+    return jsonify(get_recently_listened(user.spotify_token))
+
+
+@app.route('/success')
+def success():
+    return render_template('success.html')
 
 # Run the app
 if __name__ == "__main__":
