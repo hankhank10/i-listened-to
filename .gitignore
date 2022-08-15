@@ -4,3 +4,4 @@
 *.pyc
 secretstuff.py
 .cache
+/migrations/*
