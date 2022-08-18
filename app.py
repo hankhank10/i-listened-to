@@ -1,7 +1,7 @@
 import base64
 import requests
 from requests.auth import HTTPBasicAuth
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 import secrets
 from dataclasses import dataclass
 
@@ -21,6 +21,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///songs.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["JSON_SORT_KEYS"] = False
+app.config['SECRET_KEY'] = "Your_secret_string"
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
@@ -28,12 +29,20 @@ migrate = Migrate(app, db)
 # Define the model
 @dataclass
 class User(db.Model):
+    spotify_token_is_current:bool
+
     id:str = db.Column(db.String(80), primary_key=True)
     spotify_username:str = db.Column(db.String(80), unique=True)
     spotify_token:str = db.Column(db.String(120), unique=True)
+    spotify_token_expires_at:datetime = db.Column(db.DateTime)
+    spotify_refresh_token:str = db.Column(db.String(120), unique=True)
     spotify_token_last_refreshed:datetime = db.Column(db.DateTime)
     last_called:datetime = db.Column(db.DateTime)
     api_calls:int = db.Column(db.Integer)
+
+    @property
+    def spotify_token_is_current(self):
+        return self.spotify_token_expires_at > datetime.now()
 
 
 # Define global paths and uris
@@ -57,7 +66,7 @@ def get_user_id(token = None):
 
 def get_recently_listened(token = None):
     midnight = datetime.combine(datetime.today(), time.min)
-    midnight = int(midnight.timestamp())
+    midnight = int(midnight.timestamp()) * 1000
 
     if token is None:
         return None
@@ -84,11 +93,15 @@ def get_recently_listened(token = None):
             'track_name': track_name
         })
 
-    return track_names
+    track_names.reverse()
 
+    return {
+        'children': track_names
+    }
 
 @app.route('/')
 def index():
+
     auth_uri =  "https://accounts.spotify.com/authorize" + \
                 "?client_id=" + secretstuff.spotify_client_id + \
                 "&response_type=code" + \
@@ -100,33 +113,51 @@ def index():
     )
 
 
+def get_new_spotify_token(spotify_code=None, refresh_token=None):
+
+    token_uri = "https://accounts.spotify.com/api/token"
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    auth = HTTPBasicAuth(secretstuff.spotify_client_id, secretstuff.spotify_client_secret)
+
+    if spotify_code:
+        params = {
+            "grant_type": "authorization_code",
+            "code": spotify_code,
+            "redirect_uri": redirect_uri,
+        }
+    elif refresh_token:
+        params = {
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+        }
+
+    response = requests.post(token_uri, params=params, headers=headers, auth=auth)
+    return response
+
+
+# This is the workflow the first time the user authenticates
 @app.route('/callback/')
 def auth_callback():
     # Get the code from the callback
     spotify_code = request.args.get('code')
 
     if not spotify_code:
-        return "No code found"
+        flash ("Login error: no code found")
+        return redirect(url_for('index'))
 
-    # Request a token
-    token_uri = "https://accounts.spotify.com/api/token"
-    params = {
-        "grant_type": "authorization_code",
-        "code": spotify_code,
-        "redirect_uri": redirect_uri,
-    }
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-    auth = HTTPBasicAuth(secretstuff.spotify_client_id, secretstuff.spotify_client_secret)
-    response = requests.post(token_uri, params=params, headers=headers, auth=auth)
+    # Get the token
+    response = get_new_spotify_token(spotify_code)
+
+    print (response.json())
 
     if not response.ok:
-        return "Error getting token"
+        flash ("Login error: error getting token from spotify")
+        return redirect(url_for('index'))
 
+    # Get the user's spotify username using the access token
     access_token = response.json()['access_token']
-
-    # Get the user's spotify username
     spotify_username = get_user_id(access_token)
 
     # Check whether the spotify username is already in the database
@@ -142,6 +173,8 @@ def auth_callback():
             id = new_id,
             spotify_username = spotify_username,
             spotify_token = access_token,
+            spotify_token_expires_at = datetime.now() + timedelta(seconds=response.json()['expires_in']),
+            spotify_refresh_token = response.json()['refresh_token'],
             api_calls = 0,
             spotify_token_last_refreshed = datetime.now()
         )
@@ -149,6 +182,8 @@ def auth_callback():
     # ... or update the user's token if the user is in the database
     else:
         user.spotify_token = access_token
+        spotify_refresh_token = response.json()['refresh_token'],
+        user.spotify_token_expires_at = datetime.now() + timedelta(seconds=response.json()['expires_in'])
         user.spotify_token_last_refreshed = datetime.now()
 
     db.session.commit()
@@ -176,12 +211,38 @@ def get_songs():
             'message': 'No user found with that id'
         }, 404
 
-    return jsonify(get_recently_listened(user.spotify_token))
+    # Check if the access token is current, and if not request a refreshed one
+    if not user.spotify_token_is_current:
+        response = get_new_spotify_token(refresh_token=user.spotify_refresh_token)
+
+        if not response.ok:
+            return {
+                'status': 'error',
+                'message': 'Error getting new token'
+            }, 500
+
+        user.spotify_token = response.json()['access_token']
+        user.spotify_token_expires_at = datetime.now() + timedelta(seconds=response.json()['expires_in'])
+        user.spotify_token_last_refreshed = datetime.now()
+        user.api_calls = 0
+        db.session.commit()
+
+    return jsonify({
+        'user': {
+            'id': user.id,
+            'spotify_username': user.spotify_username,
+            'spotify_token_expires_at': user.spotify_token_expires_at.isoformat(),
+            'spotify_token_is_current': user.spotify_token_is_current,
+            'server_time': datetime.now().isoformat(),
+        },
+        'data': get_recently_listened(user.spotify_token)
+    })
 
 
 @app.route('/success')
 def success():
     return render_template('success.html')
+
 
 # Run the app
 if __name__ == "__main__":
