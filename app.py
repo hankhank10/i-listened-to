@@ -46,7 +46,7 @@ class User(db.Model):
 
 
 # Define global paths and uris
-app_uri = "http://logspot.top:5001/"
+app_uri = "https://logspot.top/"
 redirect_path = "callback/"
 redirect_uri = app_uri + redirect_path
 
