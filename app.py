@@ -193,7 +193,10 @@ def auth_callback():
 
 @app.route('/getsongs/')
 def get_songs():
-    user_id = request.args.get('user_id')
+
+    posted_json = request.get_json()
+    user_id = posted_json['user_id']
+    #user_id = request.args.get('user_id')
 
     if not user_id:
         return {
