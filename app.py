@@ -191,7 +191,7 @@ def auth_callback():
     return render_template('success.html', id=user.id)
 
 
-@app.post('/getsongs/')
+@app.route('/getsongs/', methods=['POST'])
 def get_songs():
 
     try:
