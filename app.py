@@ -238,7 +238,6 @@ def get_songs():
     return jsonify({
         'user': {
             'id': user.id,
-            'spotify_username': user.spotify_username,
             'spotify_token_expires_at': user.spotify_token_expires_at.isoformat(),
             'spotify_token_is_current': user.spotify_token_is_current,
             'server_time': datetime.now().isoformat(),
