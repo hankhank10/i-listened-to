@@ -194,9 +194,14 @@ def auth_callback():
 @app.route('/getsongs/')
 def get_songs():
 
-    posted_json = request.get_json()
-    user_id = posted_json['user_id']
-    #user_id = request.args.get('user_id')
+    try:
+        posted_json = request.get_json()
+        user_id = posted_json['user_id']
+    except:
+        return jsonify({
+            'status': 'error',
+            'message': 'No JSON found'
+        }), 400
 
     if not user_id:
         return {
