@@ -50,8 +50,8 @@ app_uri = "https://logspot.top/"
 redirect_path = "callback/"
 redirect_uri = app_uri + redirect_path
 
-spotify_recently_listened_api_uri = "https://api.spotify.com/v1/me/player/recently-played"
-spotify_user_api_uri = "https://api.spotify.com/v1/me"
+spotify_api_recently_listened_uri = "https://api.spotify.com/v1/me/player/recently-played"
+spotify_api_user_uri = "https://api.spotify.com/v1/me"
 
 
 def get_user_id(token = None):
@@ -60,7 +60,7 @@ def get_user_id(token = None):
 
     headers = {"Authorization": "Bearer " + token}
 
-    response = requests.get(spotify_user_api_uri, headers=headers)
+    response = requests.get(spotify_api_user_uri, headers=headers)
     return response.json()['id']
 
 
@@ -77,7 +77,7 @@ def get_recently_listened(token = None):
         "limit": 50,
         "after": midnight
     }
-    response = requests.get(spotify_recently_listened_api_uri, headers=headers, params=params)
+    response = requests.get(spotify_api_recently_listened_uri, headers=headers, params=params)
 
     json_response = response.json()
 
