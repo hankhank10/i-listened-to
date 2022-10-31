@@ -52,6 +52,7 @@ redirect_uri = app_uri + redirect_path
 
 spotify_api_recently_listened_uri = "https://api.spotify.com/v1/me/player/recently-played"
 spotify_api_user_uri = "https://api.spotify.com/v1/me"
+spotify_api_token_uri = "https://accounts.spotify.com/api/token"
 
 
 def get_user_id(token = None):
@@ -84,7 +85,6 @@ def get_recently_listened(token = None):
     track_names = []
 
     for item in json_response['items']:
-
         track_name = item['track']['name']
         artist_name = item['track']['artists'][0]['name']
 
@@ -99,23 +99,28 @@ def get_recently_listened(token = None):
         'children': track_names
     }
 
+
 @app.route('/')
 def index():
-
-    auth_uri =  "https://accounts.spotify.com/authorize" + \
-                "?client_id=" + secretstuff.spotify_client_id + \
-                "&response_type=code" + \
-                "&redirect_uri=" + redirect_uri + \
-                "&scope=user-read-recently-played"
     return render_template(
-        'index.html',
-        auth_uri=auth_uri
+        'index.html'
     )
+
+
+@app.route('/spotify_authenticate')
+def spotify_authenticate_redirect():
+
+    auth_uri = "https://accounts.spotify.com/authorize" + \
+               "?client_id=" + secretstuff.spotify_client_id + \
+               "&response_type=code" + \
+               "&redirect_uri=" + redirect_uri + \
+               "&scope=user-read-recently-played"
+
+    return redirect(auth_uri)
 
 
 def get_new_spotify_token(spotify_code=None, refresh_token=None):
 
-    token_uri = "https://accounts.spotify.com/api/token"
     headers = {
         "Content-Type": "application/x-www-form-urlencoded"
     }
@@ -133,7 +138,7 @@ def get_new_spotify_token(spotify_code=None, refresh_token=None):
             "refresh_token": refresh_token,
         }
 
-    response = requests.post(token_uri, params=params, headers=headers, auth=auth)
+    response = requests.post(spotify_api_token_uri, params=params, headers=headers, auth=auth)
     return response
 
 
