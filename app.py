@@ -102,9 +102,7 @@ def get_recently_listened(token = None):
 
 @app.route('/')
 def index():
-    return render_template(
-        'index.html'
-    )
+    return render_template('index.html')
 
 
 @app.route('/spotify_authenticate')
@@ -137,6 +135,8 @@ def get_new_spotify_token(spotify_code=None, refresh_token=None):
             "grant_type": "refresh_token",
             "refresh_token": refresh_token,
         }
+    else:
+        return None
 
     response = requests.post(spotify_api_token_uri, params=params, headers=headers, auth=auth)
     return response
@@ -161,7 +161,7 @@ def auth_callback():
         flash ("Login error: error getting token from spotify")
         return redirect(url_for('index'))
 
-    # Get the user's spotify username using the access token
+    # Get the user's access token and use it to get their spotify username
     access_token = response.json()['access_token']
     spotify_username = get_user_id(access_token)
 
@@ -187,7 +187,7 @@ def auth_callback():
     # ... or update the user's token if the user is in the database
     else:
         user.spotify_token = access_token
-        spotify_refresh_token = response.json()['refresh_token'],
+        #user.spotify_refresh_token = response.json()['refresh_token']
         user.spotify_token_expires_at = datetime.now() + timedelta(seconds=response.json()['expires_in'])
         user.spotify_token_last_refreshed = datetime.now()
 
@@ -199,6 +199,7 @@ def auth_callback():
 @app.route('/getsongs/', methods=['POST'])
 def get_songs():
 
+    # Check that the JSON we have been sent is valid and matches a user
     try:
         posted_json = request.get_json()
         user_id = posted_json['user_id']
