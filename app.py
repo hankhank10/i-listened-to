@@ -196,7 +196,7 @@ def auth_callback():
     return render_template('success.html', id=user.id)
 
 
-@app.route('/getsongs/', methods=['POST'])
+@app.post('/getsongs/')
 def get_songs():
 
     # Check that the JSON we have been sent is valid and matches a user
