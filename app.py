@@ -252,11 +252,6 @@ def get_songs():
     })
 
 
-#@app.route('/success')
-#def success():
-#    return render_template('success.html')
-
-
 # Run the app
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
