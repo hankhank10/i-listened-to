@@ -154,7 +154,7 @@ def auth_callback():
         flash ("Login error: no code found")
         return redirect(url_for('index'))
 
-    # Get the token
+    # Get the token from the Spotify callback
     response = get_new_spotify_token(spotify_code)
 
     print (response.json())  # for debug
@@ -208,7 +208,7 @@ def get_songs():
     except:
         return jsonify({
             'status': 'error',
-            'message': 'No JSON found'
+            'message': 'Failure parsing JSON or no JSON received'
         }), 400
 
     if not user_id:
@@ -229,19 +229,31 @@ def get_songs():
 
     # Check if the access token is current, and if not request a refreshed one
     if not user.spotify_token_is_current:
+        # Request the token from Spotify
         response = get_new_spotify_token(refresh_token=user.spotify_refresh_token)
 
+        # Check it is good
         if not response.ok:
             return {
                 'status': 'error',
                 'message': 'Error getting new token'
             }, 500
 
+        # Update the database record
         user.spotify_token = response.json()['access_token']
         user.spotify_token_expires_at = datetime.now() + timedelta(seconds=response.json()['expires_in'])
         user.spotify_token_last_refreshed = datetime.now()
         user.api_calls = 0
         db.session.commit()
+
+    # Get the tracks from spotify
+    try:
+        recently_listened_tracks = get_recently_listened(user.spotify_token)
+    except:
+        return {
+            'status': 'error',
+            'message': 'Failed to get spotify song list'
+        }, 400
 
     return jsonify({
         'user': {
@@ -250,7 +262,7 @@ def get_songs():
             'spotify_token_is_current': user.spotify_token_is_current,
             'server_time': datetime.now().isoformat(),
         },
-        'data': get_recently_listened(user.spotify_token)
+        'data': recently_listened_tracks
     })
 
 
