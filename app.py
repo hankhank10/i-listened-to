@@ -54,6 +54,9 @@ spotify_api_recently_listened_uri = "https://api.spotify.com/v1/me/player/recent
 spotify_api_user_uri = "https://api.spotify.com/v1/me"
 spotify_api_token_uri = "https://accounts.spotify.com/api/token"
 
+#####################
+# SPOTIFY API CALLS #
+#####################
 
 def get_user_id(token = None):
     if token is None:
@@ -65,23 +68,20 @@ def get_user_id(token = None):
     return response.json()['id']
 
 
-def get_recently_listened(token = None):
+def get_recently_listened(token):
     midnight = datetime.combine(datetime.today(), time.min)
     midnight = int(midnight.timestamp()) * 1000
 
-    if token is None:
-        return None
-    headers = {
-        "Authorization": "Bearer " + token
-    }
+    # Request the data from Spotify
+    headers = {"Authorization": "Bearer " + token}
     params = {
         "limit": 50,
         "after": midnight
     }
     response = requests.get(spotify_api_recently_listened_uri, headers=headers, params=params)
 
+    # Parse the response
     json_response = response.json()
-
     track_names = []
 
     for item in json_response['items']:
@@ -100,28 +100,9 @@ def get_recently_listened(token = None):
     }
 
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-
-@app.route('/spotify_authenticate')
-def spotify_authenticate_redirect():
-
-    auth_uri = "https://accounts.spotify.com/authorize" + \
-               "?client_id=" + secretstuff.spotify_client_id + \
-               "&response_type=code" + \
-               "&redirect_uri=" + redirect_uri + \
-               "&scope=user-read-recently-played"
-
-    return redirect(auth_uri)
-
-
 def get_new_spotify_token(spotify_code=None, refresh_token=None):
 
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
     auth = HTTPBasicAuth(secretstuff.spotify_client_id, secretstuff.spotify_client_secret)
 
     if spotify_code:
@@ -136,16 +117,37 @@ def get_new_spotify_token(spotify_code=None, refresh_token=None):
             "refresh_token": refresh_token,
         }
     else:
+        # This is an error as a spotify_code or refresh_token is required
         return None
 
     response = requests.post(spotify_api_token_uri, params=params, headers=headers, auth=auth)
     return response
 
 
+#####################
+# ROUTES            #
+#####################
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/spotify_authenticate')
+def spotify_authenticate_redirect():
+    auth_uri = "https://accounts.spotify.com/authorize" + \
+               "?client_id=" + secretstuff.spotify_client_id + \
+               "&response_type=code" + \
+               "&redirect_uri=" + redirect_uri + \
+               "&scope=user-read-recently-played"
+    return redirect(auth_uri)
+
+
 # This is the workflow the first time the user authenticates
+# Spotify sends its code back to this callback route
 @app.route('/callback/')
 def auth_callback():
-    # Get the code from the callback
+    # Get the code from the callback sent by Spotify
     spotify_code = request.args.get('code')
 
     if not spotify_code:
@@ -155,7 +157,7 @@ def auth_callback():
     # Get the token
     response = get_new_spotify_token(spotify_code)
 
-    print (response.json())
+    print (response.json())  # for debug
 
     if not response.ok:
         flash ("Login error: error getting token from spotify")
