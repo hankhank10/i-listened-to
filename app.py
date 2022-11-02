@@ -1,4 +1,3 @@
-import base64
 import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime, time, timedelta
@@ -11,7 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
 
-# Import my credentials
+# Import secrets
 import secretstuff
 
 # Create the app
@@ -21,7 +20,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///songs.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["JSON_SORT_KEYS"] = False
-app.config['SECRET_KEY'] = "Your_secret_string"
+app.config['SECRET_KEY'] = secretstuff.app_secret_key
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
