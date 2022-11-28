@@ -214,6 +214,7 @@ def get_songs():
         posted_json = request.get_json()
         user_id = posted_json['user_id']
     except:
+        print ("Error: invalid JSON")
         return jsonify({
             'status': 'error',
             'message': 'Failure parsing JSON or no JSON received'
