@@ -25,7 +25,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
-# Define the model
+# Define the model in which the user data and tokens are stored
 @dataclass
 class User(db.Model):
     spotify_token_is_current:bool
@@ -53,9 +53,11 @@ spotify_api_recently_listened_uri = "https://api.spotify.com/v1/me/player/recent
 spotify_api_user_uri = "https://api.spotify.com/v1/me"
 spotify_api_token_uri = "https://accounts.spotify.com/api/token"
 
+
 #####################
 # SPOTIFY API CALLS #
 #####################
+
 
 def get_user_id(token = None):
     if token is None:
@@ -127,11 +129,14 @@ def get_new_spotify_token(spotify_code=None, refresh_token=None):
 # ROUTES            #
 #####################
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
 
+# This redirects the user to the spotify authentication API. It is here in a route rather than in the HTML because
+# it involves passing a client_id which I would rather not expose openly
 @app.route('/spotify_authenticate')
 def spotify_authenticate_redirect():
     auth_uri = "https://accounts.spotify.com/authorize" + \
@@ -142,18 +147,18 @@ def spotify_authenticate_redirect():
     return redirect(auth_uri)
 
 
-# This is the workflow the first time the user authenticates
-# Spotify sends its code back to this callback route
+# This is the workflow the first time the user authenticates. Spotify sends its code back to this callback route after
+# the user authenticates successfully
 @app.route('/callback/')
 def auth_callback():
-    # Get the code from the callback sent by Spotify
+    # Get the 'code' from the callback sent by Spotify
     spotify_code = request.args.get('code')
 
     if not spotify_code:
-        flash ("Login error: no code found")
+        flash ("Login error: no code found in the information returned by Spotify")
         return redirect(url_for('index'))
 
-    # Get the token from the Spotify callback
+    # Use the code returned by Spotify to request a token from Spotify
     response = get_new_spotify_token(spotify_code)
 
     print (response.json())  # for debug
@@ -162,16 +167,18 @@ def auth_callback():
         flash ("Login error: error getting token from spotify")
         return redirect(url_for('index'))
 
-    # Get the user's access token and use it to get their spotify username
+    # Get the access token returned by Spotify
     access_token = response.json()['access_token']
+
+    # Use the token to get the user's Spotify username
     spotify_username = get_user_id(access_token)
 
-    # Check whether the spotify username is already in the database
+    # Check whether the Spotify username is already in the database
     user = User.query.filter_by(
         spotify_username = spotify_username
     ).first()
 
-    # Create a new user if that spotify username is not in the database already ...
+    # If that spotify username is not in the database already then create a new user record ...
     if not user:
         new_id = secrets.token_hex(40)
 
@@ -188,19 +195,21 @@ def auth_callback():
     # ... or update the user's token if the user is in the database
     else:
         user.spotify_token = access_token
-        #user.spotify_refresh_token = response.json()['refresh_token']
         user.spotify_token_expires_at = datetime.now() + timedelta(seconds=response.json()['expires_in'])
         user.spotify_token_last_refreshed = datetime.now()
 
     db.session.commit()
 
-    return render_template('success.html', id=user.id)
+    return render_template(
+        'success.html',
+        id=user.id
+    )
 
 
 @app.post('/getsongs/')
 def get_songs():
 
-    # Check that the JSON we have been sent is valid and matches a user
+    # Check that we have been sent JSON and that it is valid and matches a user
     try:
         posted_json = request.get_json()
         user_id = posted_json['user_id']
@@ -213,12 +222,10 @@ def get_songs():
     if not user_id:
         return {
             'status': 'error',
-            'message': 'No user_id provided'
+            'message': 'No user_id provided in JSON'
         }, 400
 
-    user = User.query.filter_by(
-        id = user_id
-    ).first()
+    user = User.query.filter_by(id = user_id).first()
 
     if not user:
         return {
