@@ -219,6 +219,8 @@ def get_songs():
             'message': 'Failure parsing JSON or no JSON received'
         }), 400
 
+    print (posted_json)
+
     if not user_id:
         return {
             'status': 'error',
