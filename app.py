@@ -235,7 +235,7 @@ def get_songs():
         return {
             'status': 'error',
             'error_type': 'user_not_found',
-            'message': 'No user found with that id'
+            'message': 'No user found with that token. Try refershing your token at https://logspot.top and is ensure it is correctly entered in LogSeq settings.'
         }, 404
 
     # Check if the access token is current, and if not request a refreshed one
@@ -248,7 +248,7 @@ def get_songs():
             return {
                 'status': 'error',
                 'error_type': 'error_refreshing_token',
-                'message': 'Error refreshing token with Spotify'
+                'message': 'Error refreshing token with Spotify. Try refershing your token at https://logspot.top and is ensure it is correctly entered in LogSeq settings.'
             }, 500
 
         # Update the database record
@@ -265,7 +265,7 @@ def get_songs():
         return {
             'status': 'error',
             'error_type': 'song_list_failed',
-            'message': 'Failed to get spotify song list'
+            'message': 'Spotify did not return a valid song list.'
         }, 400
 
     return jsonify({
