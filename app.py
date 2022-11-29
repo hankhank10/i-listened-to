@@ -214,9 +214,9 @@ def get_songs():
         posted_json = request.get_json()
         user_id = posted_json['user_id']
     except:
-        print ("Error: invalid JSON")
         return jsonify({
             'status': 'error',
+            'error_type': 'failure_parsing_json',
             'message': 'Failure parsing JSON or no JSON received'
         }), 400
 
@@ -225,6 +225,7 @@ def get_songs():
     if not user_id:
         return {
             'status': 'error',
+            'error_type': 'no_user_id',
             'message': 'No user_id provided in JSON'
         }, 400
 
@@ -233,6 +234,7 @@ def get_songs():
     if not user:
         return {
             'status': 'error',
+            'error_type': 'user_not_found',
             'message': 'No user found with that id'
         }, 404
 
@@ -245,7 +247,8 @@ def get_songs():
         if not response.ok:
             return {
                 'status': 'error',
-                'message': 'Error getting new token'
+                'error_type': 'error_refreshing_token',
+                'message': 'Error refreshing token with Spotify'
             }, 500
 
         # Update the database record
@@ -261,6 +264,7 @@ def get_songs():
     except:
         return {
             'status': 'error',
+            'error_type': 'song_list_failed',
             'message': 'Failed to get spotify song list'
         }, 400
 
