@@ -179,7 +179,7 @@ def auth_callback():
 
     # If that spotify username is not in the database already then create a new user record ...
     if not user:
-        new_id = secrets.token_hex(15)
+        new_id = "spotify"+secrets.token_hex(15)
 
         user = SpotifyUser(
             id = new_id,
