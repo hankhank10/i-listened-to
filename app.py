@@ -137,7 +137,7 @@ def index():
 
 # This redirects the user to the spotify authentication API. It is here in a route rather than in the HTML because
 # it involves passing a client_id which I would rather not expose openly
-@app.route('/spotify_authenticate')
+@app.route('/spotify/authenticate')
 def spotify_authenticate_redirect():
     auth_uri = "https://accounts.spotify.com/authorize" + \
                "?client_id=" + secretstuff.spotify_client_id + \
@@ -149,7 +149,7 @@ def spotify_authenticate_redirect():
 
 # This is the workflow the first time the user authenticates. Spotify sends its code back to this callback route after
 # the user authenticates successfully
-@app.route('/callback/')
+@app.route('/spotify/callback/')
 def auth_callback():
     # Get the 'code' from the callback sent by Spotify
     spotify_code = request.args.get('code')
@@ -206,7 +206,7 @@ def auth_callback():
     )
 
 
-@app.post('/getsongs/')
+@app.post('/spotify/getsongs/')
 def get_songs():
 
     # Check that we have been sent JSON and that it is valid and matches a user
