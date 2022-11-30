@@ -45,7 +45,7 @@ class SpotifyUser(db.Model):
 
 # Define global paths and uris
 app_uri = "https://spotify.logspot.top/"
-redirect_path = "/callback/"
+redirect_path = "callback/"
 redirect_uri = app_uri + redirect_path
 
 spotify_api_recently_listened_uri = "https://api.spotify.com/v1/me/player/recently-played"
