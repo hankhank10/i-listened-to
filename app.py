@@ -9,7 +9,6 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
-
 # Import secrets
 import secretstuff
 
@@ -45,8 +44,8 @@ class SpotifyUser(db.Model):
 
 
 # Define global paths and uris
-app_uri = "https://logspot.top/"
-redirect_path = "callback/"
+app_uri = "https://spotify.logspot.top/"
+redirect_path = "/callback/"
 redirect_uri = app_uri + redirect_path
 
 spotify_api_recently_listened_uri = "https://api.spotify.com/v1/me/player/recently-played"
@@ -137,7 +136,7 @@ def index():
 
 # This redirects the user to the spotify authentication API. It is here in a route rather than in the HTML because
 # it involves passing a client_id which I would rather not expose openly
-@app.route('/spotify/authenticate')
+@app.route('authenticate')
 def spotify_authenticate_redirect():
     auth_uri = "https://accounts.spotify.com/authorize" + \
                "?client_id=" + secretstuff.spotify_client_id + \
@@ -149,7 +148,7 @@ def spotify_authenticate_redirect():
 
 # This is the workflow the first time the user authenticates. Spotify sends its code back to this callback route after
 # the user authenticates successfully
-@app.route('/spotify/callback/')
+@app.route('callback/')
 def auth_callback():
     # Get the 'code' from the callback sent by Spotify
     spotify_code = request.args.get('code')
@@ -206,7 +205,7 @@ def auth_callback():
     )
 
 
-@app.post('/spotify/getsongs/')
+@app.post('getsongs/')
 def get_songs():
 
     # Check that we have been sent JSON and that it is valid and matches a user
@@ -235,7 +234,7 @@ def get_songs():
         return {
             'status': 'error',
             'error_type': 'user_not_found',
-            'message': 'No user found with that token. Try refreshing your token at https://logspot.top and is ensure it is correctly entered in LogSeq settings.'
+            'message': 'No user found with that token. Try refreshing your token at ' + app_uri + ' and is ensure it is correctly entered in LogSeq settings.'
         }, 404
 
     # Check if the access token is current, and if not request a refreshed one
@@ -248,7 +247,7 @@ def get_songs():
             return {
                 'status': 'error',
                 'error_type': 'error_refreshing_token',
-                'message': 'Error fetching refreshed authentication from Spotify. Try refreshing your token at https://logspot.top and is ensure it is correctly entered in LogSeq settings.'
+                'message': 'Error fetching refreshed authentication from Spotify. Try refreshing your token at ' + app_uri + ' and is ensure it is correctly entered in LogSeq settings.'
             }, 500
 
         # Update the database record
