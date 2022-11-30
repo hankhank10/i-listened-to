@@ -27,7 +27,7 @@ migrate = Migrate(app, db)
 
 # Define the model in which the user data and tokens are stored
 @dataclass
-class User(db.Model):
+class SpotifyUser(db.Model):
     spotify_token_is_current:bool
 
     id:str = db.Column(db.String(80), primary_key=True)
@@ -174,15 +174,15 @@ def auth_callback():
     spotify_username = get_user_id(access_token)
 
     # Check whether the Spotify username is already in the database
-    user = User.query.filter_by(
+    user = SpotifyUser.query.filter_by(
         spotify_username = spotify_username
     ).first()
 
     # If that spotify username is not in the database already then create a new user record ...
     if not user:
-        new_id = secrets.token_hex(40)
+        new_id = secrets.token_hex(15)
 
-        user = User(
+        user = SpotifyUser(
             id = new_id,
             spotify_username = spotify_username,
             spotify_token = access_token,
@@ -229,7 +229,7 @@ def get_songs():
             'message': 'No user_id provided in JSON'
         }, 400
 
-    user = User.query.filter_by(id = user_id).first()
+    user = SpotifyUser.query.filter_by(id = user_id).first()
 
     if not user:
         return {
